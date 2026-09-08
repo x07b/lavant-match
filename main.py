@@ -4,13 +4,13 @@ import time
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
 from config import BASE_DIR
-from renderer import rows_html, write_index
+from renderer import mobile_rows_html, rows_html, write_index
 from scraper import get_standings
 
 
 def run_once():
     print('=' * 60)
-    print(' LA ANT MATCH — FLASHScore → HTML/CSS')
+    print(' LA ANT MATCH - Flashscore -> HTML/CSS')
     print('=' * 60)
 
     standings = get_standings()
@@ -28,7 +28,7 @@ def run_once():
     for team in standings:
         logo = 'LOGO OK' if team.get('logo') or team.get('logo_src') else 'NO LOGO'
         print(
-            f"{team['rank']:>2} | {team['arabic']} | "
+            f"{team['rank']:>2} | "
             f"MJ={team['played']} | PTS={team['points']} | {logo}"
         )
 
@@ -51,7 +51,10 @@ class AppHandler(SimpleHTTPRequestHandler):
                     f'Expected 16 teams, but scraper returned {len(standings)}.'
                 )
             standings.sort(key=lambda x: x['rank'])
-            payload = {'rows': rows_html(standings)}
+            payload = {
+                'rows': rows_html(standings),
+                'mobileRows': mobile_rows_html(standings),
+            }
             body = json.dumps(payload, ensure_ascii=False).encode('utf-8')
         except Exception as exc:
             body = json.dumps({'error': str(exc)}, ensure_ascii=False).encode('utf-8')

@@ -5,6 +5,7 @@ ASSETS_DIR = BASE_DIR / 'assets'
 LOGOS_DIR = ASSETS_DIR / 'logos'
 OUTPUT_DIR = BASE_DIR / 'output'
 INDEX_FILE = BASE_DIR / 'index.html'
+MOBILE_INDEX_FILE = BASE_DIR / 'mobile-index.html'
 
 FLASHSCORE_URL = (
     'https://www.flashscore.fr/classement/6RacM8Ea/'

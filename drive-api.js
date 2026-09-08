@@ -1,4 +1,5 @@
 const DRIVE_API_URL = "https://script.google.com/macros/s/AKfycbw_p7q7Z0UOWTkUsyfWszUqQq8Fn3rrJYUbjRsO9wSHNJJf2HMSNOcaGL-6fhkFy2_vhA/exec";
+const DRIVE_EXPORT_FOLDER = "exports";
 
 async function uploadToDrive(file, folder, metadata = {}, forceUpload = false) {
   if (!DRIVE_API_URL.startsWith("https://script.google.com/")) {
@@ -63,12 +64,13 @@ function findExistingAsset(file, folder) {
   });
 }
 
-async function uploadExport(blob, filename) {
+async function uploadExport(blob, filename, width = 1920, height = 1080, board = "desktop") {
   const file = new File([blob], filename, { type: "image/png" });
-  return uploadToDrive(file, "exports", {
+  return uploadToDrive(file, DRIVE_EXPORT_FOLDER, {
     type: "export",
-    width: 1920,
-    height: 1080
+    board,
+    width,
+    height
   });
 }
 

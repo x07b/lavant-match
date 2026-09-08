@@ -337,7 +337,7 @@ transform: scaleX(1.06);
   top: calc(50% - 216px);
 }
 
-.export-btn:not(.update-btn):not(.flashscore-btn):not(.custom-export-btn):not(.edit-assets-btn) {
+.export-btn:not(.update-btn):not(.flashscore-btn):not(.custom-export-btn):not(.edit-assets-btn):not(.mobile-btn) {
   top: calc(50% - 108px);
 }
 
@@ -361,6 +361,10 @@ transform: scaleX(1.06);
 
 .edit-assets-btn {
   top: calc(50% + 108px);
+}
+
+.mobile-btn {
+  top: calc(50% + 216px);
 }
 
 .asset-panel {

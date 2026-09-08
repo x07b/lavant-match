@@ -11,6 +11,7 @@ import "./drive-api.js";
   const exportRowCount = document.getElementById("exportRowCount");
   const updateNotice = document.getElementById("updateNotice");
   const editAssetsBtn = document.getElementById("editAssetsBtn");
+  const mobileBtn = document.getElementById("mobileBtn");
   const assetPanel = document.getElementById("assetPanel");
   const closeAssetPanel = document.getElementById("closeAssetPanel");
   const uploadAssetBtn = document.getElementById("uploadAssetBtn");
@@ -129,9 +130,11 @@ import "./drive-api.js";
     const rows = [...dynamicData.querySelectorAll(".dynamic-row")];
     for (let i = 0; i < rows.length; i += 1) {
       const file = await loadLocalAsset(`teams-${i}`);
-      if (file) rows[i].querySelector(".team-logo").src = typeof file === "string"
-        ? file
-        : URL.createObjectURL(file);
+      // Keep generated local logo paths; only persisted Drive URLs should
+      // replace them during restoration.
+      if (typeof file === "string") {
+        rows[i].querySelector(".team-logo").src = file;
+      }
     }
   }
 
@@ -147,6 +150,10 @@ import "./drive-api.js";
 
   flashscoreBtn.addEventListener("click", () => {
     window.open(flashscoreUrl, "_blank", "noopener,noreferrer");
+  });
+
+  mobileBtn.addEventListener("click", () => {
+    window.location.assign(new URL("mobile-index.html", window.location.href).href);
   });
 
   restoreLocalAssets().catch(err => console.error("Could not restore assets:", err));
@@ -315,7 +322,19 @@ import "./drive-api.js";
     showUpdateNotice("UPDATING...");
 
     try {
-      const response = await fetch(updateUrl, { method: "POST" });
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => controller.abort(), 90000);
+      let response;
+      try {
+        response = await fetch(updateUrl, {
+          method: "POST",
+          signal: controller.signal
+        });
+
+        window.updateDesktopRanking = () => updateBtn.click();
+      } finally {
+        window.clearTimeout(timeout);
+      }
       const payload = await response.json();
       if (!response.ok || !payload.rows) {
         throw new Error(payload.error || "Update failed.");
@@ -328,7 +347,12 @@ import "./drive-api.js";
       showUpdateNotice("DONE");
     } catch (err) {
       console.error(err);
-      showUpdateNotice("UPDATE FAILED", true);
+      const message = err && err.name === "AbortError"
+        ? "UPDATE TIMEOUT - CHECK PYTHON SERVER"
+        : err instanceof TypeError
+          ? "UPDATE SERVER OFFLINE - RUN: python main.py --serve"
+          : "UPDATE FAILED - CHECK PYTHON SERVER";
+      showUpdateNotice(message, true);
     } finally {
       updateBtn.disabled = false;
       label.textContent = oldLabel;
@@ -341,6 +365,7 @@ import "./drive-api.js";
     const oldLabel = label.textContent;
     label.textContent = "EXPORT...";
     showUpdateNotice("EXPORTING...");
+    await new Promise(resolve => requestAnimationFrame(resolve));
 
     let clone;
 
@@ -405,9 +430,10 @@ import "./drive-api.js";
       if (!pngBlob) throw new Error("Could not create PNG blob.");
       link.href = URL.createObjectURL(pngBlob);
       link.click();
-      window.driveStorageApi.uploadExport(pngBlob, link.download).catch(err => {
+      window.driveStorageApi.uploadExport(pngBlob, link.download, 1920, 1080, "desktop").catch(err => {
         console.error("Google Drive export upload failed:", err);
       });
+      showUpdateNotice("EXPORTED");
       URL.revokeObjectURL(link.href);
     } catch (err) {
       console.error(err);
@@ -420,8 +446,5 @@ import "./drive-api.js";
     }
   }
 
-  btn.addEventListener("click", () => {
-    exportOptions.hidden = false;
-    exportRowCount.focus();
-  });
+  btn.addEventListener("click", () => exportBoard());
 })();
